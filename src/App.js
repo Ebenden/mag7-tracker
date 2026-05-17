@@ -2,24 +2,24 @@ import React, { useState, useEffect, useCallback } from "react";
 
 const API_KEY = process.env.REACT_APP_FINNHUB_API_KEY;
 
-const MAG7 = [
-  { symbol: "SPY", name: "S&P 500 ETF", abbr: "SPY" },
-  { symbol: "AAPL", name: "Apple", abbr: "AAPL" },
-  { symbol: "MSFT", name: "Microsoft", abbr: "MSFT" },
-  { symbol: "GOOGL", name: "Alphabet", abbr: "GOOGL" },
-  { symbol: "AMZN", name: "Amazon", abbr: "AMZN" },
-  { symbol: "META", name: "Meta", abbr: "META" },
-  { symbol: "NVDA", name: "Nvidia", abbr: "NVDA" },
-  { symbol: "TSLA", name: "Tesla", abbr: "TSLA" },
-  { symbol: "AMD", name: "AMD", abbr: "AMD" },
-  { symbol: "ASML", name: "ASML", abbr: "ASML" },
-  { symbol: "CRWD", name: "CrowdStrike", abbr: "CRWD" },
-  { symbol: "PLTR", name: "Palantir", abbr: "PLTR" },
-  { symbol: "TSM", name: "TSMC", abbr: "TSM" },
-  { symbol: "ZS", name: "Zscaler", abbr: "ZS" },
+const STOCKS = [
+  { symbol: "SPY", name: "S&P 500 ETF" },
+  { symbol: "AAPL", name: "Apple" },
+  { symbol: "MSFT", name: "Microsoft" },
+  { symbol: "GOOGL", name: "Alphabet" },
+  { symbol: "AMZN", name: "Amazon" },
+  { symbol: "META", name: "Meta" },
+  { symbol: "NVDA", name: "Nvidia" },
+  { symbol: "TSLA", name: "Tesla" },
+  { symbol: "AMD", name: "AMD" },
+  { symbol: "ASML", name: "ASML" },
+  { symbol: "CRWD", name: "CrowdStrike" },
+  { symbol: "PLTR", name: "Palantir" },
+  { symbol: "TSM", name: "TSMC" },
+  { symbol: "ZS", name: "Zscaler" },
 ];
 
-const REFRESH_INTERVAL = 60 * 60 * 1000; // 1 hour in ms
+const REFRESH_INTERVAL = 60 * 60 * 1000;
 
 async function fetchQuote(symbol) {
   const res = await fetch(
@@ -67,6 +67,7 @@ export default function App() {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [nextRefresh, setNextRefresh] = useState(REFRESH_INTERVAL);
   const [refreshing, setRefreshing] = useState(false);
+  const [expanded, setExpanded] = useState(null);
 
   const loadAll = useCallback(async (isManual = false) => {
     if (isManual) setRefreshing(true);
@@ -74,7 +75,7 @@ export default function App() {
     setError(null);
     try {
       const results = await Promise.all(
-        MAG7.map(async (s) => {
+        STOCKS.map(async (s) => {
           const q = await fetchQuote(s.symbol);
           return [s.symbol, q];
         })
@@ -83,7 +84,7 @@ export default function App() {
       setLastUpdated(new Date());
       setNextRefresh(REFRESH_INTERVAL);
     } catch (e) {
-      setError("Failed to fetch data. Check your API key or connection.");
+      setError("Failed to fetch. Check connection.");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -97,364 +98,299 @@ export default function App() {
   }, [loadAll]);
 
   const countdown = useCountdown(nextRefresh);
-
-  const totalMktSentiment = Object.values(stocks).filter((s) => s.pctChange > 0).length;
+  const upCount = Object.values(stocks).filter((s) => s?.pctChange >= 0).length;
 
   return (
-    <div style={styles.root}>
-      <div style={styles.bg} />
-      <div style={styles.grain} />
-
-      <header style={styles.header}>
-        <div style={styles.headerTop}>
-          <div>
-            <div style={styles.logo}>MAG<span style={styles.logoAccent}>7</span></div>
-            <div style={styles.logoSub}>MARKET TRACKER</div>
-          </div>
-          <div style={styles.headerRight}>
-            <div style={styles.sentimentBadge}>
-              <span style={{ color: totalMktSentiment >= 4 ? "#00ff87" : totalMktSentiment >= 2 ? "#ffd166" : "#ff4d6d" }}>
-                {totalMktSentiment}/7 ↑
-              </span>
-            </div>
-          </div>
+    <div style={s.root}>
+      {/* Header */}
+      <div style={s.header}>
+        <div style={s.headerLeft}>
+          <span style={s.logo}>MAG<span style={s.accent}>7</span></span>
+          <span style={s.subtitle}>TRACKER</span>
         </div>
-
-        <div style={styles.headerMeta}>
-          <span style={styles.metaItem}>
-            {lastUpdated
-              ? `Updated ${lastUpdated.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}`
-              : "Loading..."}
+        <div style={s.headerRight}>
+          <span style={s.sentiment}>
+            <span style={{ color: upCount >= 7 ? "#00e676" : upCount >= 4 ? "#ffca28" : "#ff5252" }}>
+              {upCount}/{STOCKS.length} ↑
+            </span>
           </span>
-          <span style={styles.metaDot}>·</span>
-          <span style={styles.metaItem}>Next: <span style={styles.countdown}>{countdown}</span></span>
           <button
-            style={{ ...styles.refreshBtn, opacity: refreshing ? 0.5 : 1 }}
+            style={{ ...s.refreshBtn, opacity: refreshing ? 0.5 : 1 }}
             onClick={() => loadAll(true)}
             disabled={refreshing}
           >
-            {refreshing ? "↻" : "↻ Refresh"}
+            ↻
           </button>
         </div>
-      </header>
+      </div>
 
-      {error && <div style={styles.error}>{error}</div>}
+      {/* Meta bar */}
+      <div style={s.metaBar}>
+        <span style={s.metaText}>
+          {lastUpdated
+            ? `Updated ${lastUpdated.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}`
+            : "Loading..."}
+        </span>
+        <span style={s.metaText}>Next: <span style={{ color: "#00e676" }}>{countdown}</span></span>
+      </div>
 
-      <main style={styles.main}>
-        {loading && !Object.keys(stocks).length ? (
-          <div style={styles.loadingWrap}>
-            {MAG7.map((s) => (
-              <div key={s.symbol} style={styles.skeletonCard} />
-            ))}
-          </div>
-        ) : (
-          <div style={styles.grid}>
-            {MAG7.map((s, i) => {
-              const q = stocks[s.symbol];
-              const up = q?.pctChange >= 0;
-              const color = up ? "#00ff87" : "#ff4d6d";
-              const bgColor = up ? "rgba(0,255,135,0.04)" : "rgba(255,77,109,0.04)";
+      {error && <div style={s.error}>{error}</div>}
 
-              return (
-                <div key={s.symbol} style={{ ...styles.card, background: bgColor, animationDelay: `${i * 60}ms` }}>
-                  <div style={styles.cardTop}>
-                    <div>
-                      <div style={styles.symbol}>{s.abbr}</div>
-                      <div style={styles.companyName}>{s.name}</div>
+      {/* Stock list */}
+      <div style={s.list}>
+        {STOCKS.map((stock) => {
+          const q = stocks[stock.symbol];
+          const up = q?.pctChange >= 0;
+          const color = up ? "#00e676" : "#ff5252";
+          const isOpen = expanded === stock.symbol;
+
+          return (
+            <div key={stock.symbol}>
+              {/* Main row */}
+              <div
+                style={s.row}
+                onClick={() => setExpanded(isOpen ? null : stock.symbol)}
+              >
+                {/* Left: symbol + name */}
+                <div style={s.rowLeft}>
+                  <span style={s.symbol}>{stock.symbol}</span>
+                  <span style={s.name}>{stock.name}</span>
+                </div>
+
+                {/* Center: price */}
+                <div style={s.rowCenter}>
+                  <span style={s.price}>
+                    {q ? `$${fmt(q.price)}` : "—"}
+                  </span>
+                </div>
+
+                {/* Right: change + pct */}
+                <div style={s.rowRight}>
+                  <span style={{ ...s.pct, color }}>
+                    {q ? `${up ? "+" : ""}${fmt(q.pctChange)}%` : "—"}
+                  </span>
+                  <span style={{ ...s.change, color }}>
+                    {q ? `${up ? "+" : ""}${fmt(q.change)}` : "—"}
+                  </span>
+                </div>
+
+                <span style={s.chevron}>{isOpen ? "▲" : "▼"}</span>
+              </div>
+
+              {/* Expanded detail */}
+              {isOpen && q && (
+                <div style={s.detail}>
+                  <div style={s.detailGrid}>
+                    <div style={s.detailItem}>
+                      <span style={s.detailLabel}>OPEN</span>
+                      <span style={s.detailVal}>${fmt(q.open)}</span>
                     </div>
-                    <div style={{ ...styles.pctBadge, color, borderColor: color }}>
-                      {q ? `${up ? "+" : ""}${fmt(q.pctChange)}%` : "—"}
+                    <div style={s.detailItem}>
+                      <span style={s.detailLabel}>HIGH</span>
+                      <span style={{ ...s.detailVal, color: "#00e676" }}>${fmt(q.high)}</span>
                     </div>
-                  </div>
-
-                  <div style={styles.price}>
-                    {q ? `$${fmt(q.price)}` : <span style={styles.pricePlaceholder}>———</span>}
-                  </div>
-
-                  <div style={styles.changeRow}>
-                    <span style={{ color }}>
-                      {q ? `${up ? "+" : ""}$${fmt(Math.abs(q.change))}` : "—"}
-                    </span>
-                    <span style={styles.vsYest}>vs yesterday</span>
-                  </div>
-
-                  <div style={styles.divider} />
-
-                  <div style={styles.statsRow}>
-                    <div style={styles.stat}>
-                      <span style={styles.statLabel}>OPEN</span>
-                      <span style={styles.statVal}>{q ? `$${fmt(q.open)}` : "—"}</span>
+                    <div style={s.detailItem}>
+                      <span style={s.detailLabel}>LOW</span>
+                      <span style={{ ...s.detailVal, color: "#ff5252" }}>${fmt(q.low)}</span>
                     </div>
-                    <div style={styles.stat}>
-                      <span style={styles.statLabel}>HIGH</span>
-                      <span style={{ ...styles.statVal, color: "#00ff87" }}>{q ? `$${fmt(q.high)}` : "—"}</span>
-                    </div>
-                    <div style={styles.stat}>
-                      <span style={styles.statLabel}>LOW</span>
-                      <span style={{ ...styles.statVal, color: "#ff4d6d" }}>{q ? `$${fmt(q.low)}` : "—"}</span>
-                    </div>
-                    <div style={styles.stat}>
-                      <span style={styles.statLabel}>PREV</span>
-                      <span style={styles.statVal}>{q ? `$${fmt(q.prevClose)}` : "—"}</span>
+                    <div style={s.detailItem}>
+                      <span style={s.detailLabel}>PREV</span>
+                      <span style={s.detailVal}>${fmt(q.prevClose)}</span>
                     </div>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        )}
-      </main>
+              )}
+            </div>
+          );
+        })}
+      </div>
 
-      <footer style={styles.footer}>
-        Data via Finnhub · Refreshes every hour · {new Date().getFullYear()}
-      </footer>
+      <div style={s.footer}>Data via Finnhub · Auto-refreshes hourly</div>
 
       <style>{`
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(16px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .card-animate {
-          animation: fadeUp 0.4s ease forwards;
-        }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #0a0a0f; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+        body { background: #0d0d0d; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
     </div>
   );
 }
 
-const styles = {
+const s = {
   root: {
     minHeight: "100vh",
-    background: "#0a0a0f",
-    color: "#e8e8f0",
-    fontFamily: "'Space Mono', monospace",
-    position: "relative",
-    overflow: "hidden",
-  },
-  bg: {
-    position: "fixed",
-    inset: 0,
-    background: "radial-gradient(ellipse at 20% 0%, rgba(0,255,135,0.06) 0%, transparent 60%), radial-gradient(ellipse at 80% 100%, rgba(255,77,109,0.06) 0%, transparent 60%)",
-    pointerEvents: "none",
-    zIndex: 0,
-  },
-  grain: {
-    position: "fixed",
-    inset: 0,
-    backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E")`,
-    pointerEvents: "none",
-    zIndex: 0,
-    opacity: 0.4,
+    background: "#0d0d0d",
+    color: "#f0f0f0",
+    fontFamily: "'Space Mono', 'Courier New', monospace",
+    maxWidth: 480,
+    margin: "0 auto",
   },
   header: {
-    position: "relative",
-    zIndex: 10,
-    padding: "20px 20px 12px",
-    borderBottom: "1px solid rgba(255,255,255,0.06)",
-    background: "rgba(10,10,15,0.8)",
-    backdropFilter: "blur(12px)",
-    WebkitBackdropFilter: "blur(12px)",
-    position: "sticky",
-    top: 0,
-  },
-  headerTop: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 10,
+    alignItems: "center",
+    padding: "14px 16px 8px",
+    borderBottom: "1px solid #1e1e1e",
+    position: "sticky",
+    top: 0,
+    background: "#0d0d0d",
+    zIndex: 10,
+  },
+  headerLeft: {
+    display: "flex",
+    alignItems: "baseline",
+    gap: 6,
   },
   logo: {
-    fontFamily: "'Syne', sans-serif",
-    fontWeight: 800,
-    fontSize: 28,
+    fontSize: 22,
+    fontWeight: 700,
     letterSpacing: "-1px",
     color: "#fff",
-    lineHeight: 1,
   },
-  logoAccent: {
-    color: "#00ff87",
+  accent: {
+    color: "#00e676",
   },
-  logoSub: {
+  subtitle: {
     fontSize: 9,
-    letterSpacing: "4px",
-    color: "rgba(255,255,255,0.3)",
-    marginTop: 3,
-    fontWeight: 400,
+    letterSpacing: "3px",
+    color: "#555",
   },
   headerRight: {
     display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-end",
-    gap: 6,
+    alignItems: "center",
+    gap: 10,
   },
-  sentimentBadge: {
-    fontFamily: "'Space Mono', monospace",
+  sentiment: {
     fontSize: 13,
     fontWeight: 700,
-    padding: "4px 10px",
-    background: "rgba(255,255,255,0.05)",
+    padding: "3px 10px",
+    background: "#1a1a1a",
     borderRadius: 20,
-    border: "1px solid rgba(255,255,255,0.1)",
-  },
-  headerMeta: {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    flexWrap: "wrap",
-  },
-  metaItem: {
-    fontSize: 10,
-    color: "rgba(255,255,255,0.35)",
-    letterSpacing: "0.5px",
-  },
-  metaDot: {
-    color: "rgba(255,255,255,0.15)",
-    fontSize: 10,
-  },
-  countdown: {
-    color: "#00ff87",
-    fontWeight: 700,
+    border: "1px solid #2a2a2a",
   },
   refreshBtn: {
-    marginLeft: "auto",
-    background: "rgba(0,255,135,0.1)",
-    border: "1px solid rgba(0,255,135,0.3)",
-    color: "#00ff87",
-    padding: "4px 12px",
-    borderRadius: 20,
-    fontSize: 10,
+    background: "#1a1a1a",
+    border: "1px solid #2a2a2a",
+    color: "#00e676",
+    width: 32,
+    height: 32,
+    borderRadius: "50%",
+    fontSize: 16,
     cursor: "pointer",
-    fontFamily: "'Space Mono', monospace",
-    letterSpacing: "0.5px",
-    transition: "all 0.2s",
-  },
-  error: {
-    position: "relative",
-    zIndex: 10,
-    margin: "16px 20px 0",
-    padding: "12px 16px",
-    background: "rgba(255,77,109,0.1)",
-    border: "1px solid rgba(255,77,109,0.3)",
-    borderRadius: 8,
-    color: "#ff4d6d",
-    fontSize: 12,
-  },
-  main: {
-    position: "relative",
-    zIndex: 10,
-    padding: "16px 16px 24px",
-  },
-  loadingWrap: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: 12,
-  },
-  skeletonCard: {
-    height: 160,
-    borderRadius: 16,
-    background: "rgba(255,255,255,0.04)",
-    animation: "pulse 1.5s ease-in-out infinite",
-  },
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: 12,
-  },
-  card: {
-    borderRadius: 16,
-    padding: "16px 14px",
-    border: "1px solid rgba(255,255,255,0.07)",
-    animation: "fadeUp 0.4s ease forwards",
-    backdropFilter: "blur(4px)",
-  },
-  cardTop: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 10,
-  },
-  symbol: {
-    fontFamily: "'Syne', sans-serif",
-    fontWeight: 800,
-    fontSize: 15,
-    color: "#fff",
-    letterSpacing: "-0.3px",
-  },
-  companyName: {
-    fontSize: 9,
-    color: "rgba(255,255,255,0.35)",
-    marginTop: 2,
-    letterSpacing: "0.5px",
-  },
-  pctBadge: {
-    fontSize: 11,
-    fontWeight: 700,
-    padding: "3px 8px",
-    borderRadius: 20,
-    border: "1px solid",
-    background: "rgba(0,0,0,0.2)",
-  },
-  price: {
-    fontFamily: "'Syne', sans-serif",
-    fontWeight: 700,
-    fontSize: 22,
-    color: "#fff",
-    letterSpacing: "-0.5px",
-    lineHeight: 1,
-    marginBottom: 4,
-  },
-  pricePlaceholder: {
-    color: "rgba(255,255,255,0.15)",
-  },
-  changeRow: {
     display: "flex",
     alignItems: "center",
-    gap: 6,
-    fontSize: 11,
-    marginBottom: 12,
+    justifyContent: "center",
   },
-  vsYest: {
-    color: "rgba(255,255,255,0.2)",
-    fontSize: 9,
+  metaBar: {
+    display: "flex",
+    justifyContent: "space-between",
+    padding: "6px 16px",
+    borderBottom: "1px solid #1a1a1a",
+  },
+  metaText: {
+    fontSize: 10,
+    color: "#444",
     letterSpacing: "0.3px",
   },
-  divider: {
-    height: 1,
-    background: "rgba(255,255,255,0.06)",
-    marginBottom: 10,
+  error: {
+    margin: "8px 16px",
+    padding: "8px 12px",
+    background: "rgba(255,82,82,0.1)",
+    border: "1px solid rgba(255,82,82,0.3)",
+    borderRadius: 6,
+    color: "#ff5252",
+    fontSize: 11,
   },
-  statsRow: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr 1fr 1fr",
-    gap: 4,
+  list: {
+    padding: "0",
   },
-  stat: {
+  row: {
+    display: "flex",
+    alignItems: "center",
+    padding: "11px 16px",
+    borderBottom: "1px solid #1a1a1a",
+    cursor: "pointer",
+    gap: 8,
+    background: "#0d0d0d",
+    transition: "background 0.15s",
+  },
+  rowLeft: {
+    flex: "0 0 90px",
     display: "flex",
     flexDirection: "column",
     gap: 2,
   },
-  statLabel: {
+  symbol: {
+    fontSize: 13,
+    fontWeight: 700,
+    color: "#fff",
+    letterSpacing: "0.3px",
+  },
+  name: {
+    fontSize: 9,
+    color: "#444",
+    letterSpacing: "0.2px",
+  },
+  rowCenter: {
+    flex: 1,
+    textAlign: "right",
+  },
+  price: {
+    fontSize: 14,
+    fontWeight: 700,
+    color: "#e0e0e0",
+    letterSpacing: "-0.3px",
+  },
+  rowRight: {
+    flex: "0 0 72px",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-end",
+    gap: 2,
+  },
+  pct: {
+    fontSize: 13,
+    fontWeight: 700,
+  },
+  change: {
+    fontSize: 10,
+  },
+  chevron: {
     fontSize: 8,
-    color: "rgba(255,255,255,0.25)",
+    color: "#333",
+    flex: "0 0 10px",
+  },
+  detail: {
+    background: "#111",
+    borderBottom: "1px solid #1a1a1a",
+    padding: "10px 16px 12px",
+    animation: "fadeIn 0.15s ease",
+  },
+  detailGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr 1fr 1fr",
+    gap: 8,
+  },
+  detailItem: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 3,
+  },
+  detailLabel: {
+    fontSize: 8,
+    color: "#444",
     letterSpacing: "0.5px",
   },
-  statVal: {
-    fontSize: 10,
-    color: "rgba(255,255,255,0.7)",
+  detailVal: {
+    fontSize: 11,
+    color: "#aaa",
     fontWeight: 700,
   },
   footer: {
-    position: "relative",
-    zIndex: 10,
     textAlign: "center",
-    padding: "16px 20px 32px",
+    padding: "20px 16px",
     fontSize: 9,
-    color: "rgba(255,255,255,0.15)",
+    color: "#2a2a2a",
     letterSpacing: "1px",
   },
 };
