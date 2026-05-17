@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from "react";
 const API_KEY = process.env.REACT_APP_FINNHUB_API_KEY;
 
 const MAG7 = [
+  { symbol: "SPY", name: "S&P 500 ETF", abbr: "SPY" },
   { symbol: "AAPL", name: "Apple", abbr: "AAPL" },
   { symbol: "MSFT", name: "Microsoft", abbr: "MSFT" },
   { symbol: "GOOGL", name: "Alphabet", abbr: "GOOGL" },
@@ -10,6 +11,12 @@ const MAG7 = [
   { symbol: "META", name: "Meta", abbr: "META" },
   { symbol: "NVDA", name: "Nvidia", abbr: "NVDA" },
   { symbol: "TSLA", name: "Tesla", abbr: "TSLA" },
+  { symbol: "AMD", name: "AMD", abbr: "AMD" },
+  { symbol: "ASML", name: "ASML", abbr: "ASML" },
+  { symbol: "CRWD", name: "CrowdStrike", abbr: "CRWD" },
+  { symbol: "PLTR", name: "Palantir", abbr: "PLTR" },
+  { symbol: "TSM", name: "TSMC", abbr: "TSM" },
+  { symbol: "ZS", name: "Zscaler", abbr: "ZS" },
 ];
 
 const REFRESH_INTERVAL = 60 * 60 * 1000; // 1 hour in ms
