@@ -100,6 +100,12 @@ export default function App() {
   const countdown = useCountdown(nextRefresh);
   const upCount = Object.values(stocks).filter((s) => s?.pctChange >= 0).length;
 
+  const sortedStocks = [...STOCKS].sort((a, b) => {
+    const pctA = stocks[a.symbol]?.pctChange ?? -Infinity;
+    const pctB = stocks[b.symbol]?.pctChange ?? -Infinity;
+    return pctB - pctA;
+  });
+
   return (
     <div style={s.root}>
       {/* Header */}
@@ -138,7 +144,7 @@ export default function App() {
 
       {/* Stock list */}
       <div style={s.list}>
-        {STOCKS.map((stock) => {
+        {sortedStocks.map((stock) => {
           const q = stocks[stock.symbol];
           const up = q?.pctChange >= 0;
           const color = up ? "#00e676" : "#ff5252";
