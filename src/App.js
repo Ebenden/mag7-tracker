@@ -307,7 +307,7 @@ const s = {
   row: {
     display: "flex",
     alignItems: "center",
-    padding: "11px 16px",
+    padding: "14px 16px",
     borderBottom: "1px solid #1a1a1a",
     cursor: "pointer",
     gap: 8,
@@ -321,14 +321,14 @@ const s = {
     gap: 2,
   },
   symbol: {
-    fontSize: 13,
+    fontSize: 17,
     fontWeight: 700,
     color: "#fff",
     letterSpacing: "0.3px",
   },
   name: {
-    fontSize: 9,
-    color: "#444",
+    fontSize: 11,
+    color: "#555",
     letterSpacing: "0.2px",
   },
   rowCenter: {
@@ -336,24 +336,24 @@ const s = {
     textAlign: "right",
   },
   price: {
-    fontSize: 14,
+    fontSize: 17,
     fontWeight: 700,
     color: "#e0e0e0",
     letterSpacing: "-0.3px",
   },
   rowRight: {
-    flex: "0 0 72px",
+    flex: "0 0 80px",
     display: "flex",
     flexDirection: "column",
     alignItems: "flex-end",
     gap: 2,
   },
   pct: {
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: 700,
   },
   change: {
-    fontSize: 10,
+    fontSize: 12,
   },
   chevron: {
     fontSize: 8,
@@ -377,12 +377,12 @@ const s = {
     gap: 3,
   },
   detailLabel: {
-    fontSize: 8,
+    fontSize: 10,
     color: "#444",
     letterSpacing: "0.5px",
   },
   detailVal: {
-    fontSize: 11,
+    fontSize: 13,
     color: "#aaa",
     fontWeight: 700,
   },
