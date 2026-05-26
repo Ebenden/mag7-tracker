@@ -1,402 +1,187 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 
-const API_KEY = process.env.REACT_APP_FINNHUB_API_KEY;
+const LISTS = {
+  b12: [
+    {t:"KO",   n:"Coca-Cola",         pe:"25.5x",roe:"43%", margin:"28%",fcf:"$11.4B",moat:"Brand Power",      div:"2.6% · 63yr",brk:"YES · ~$25B", note:"Buffett held since 1988. 63 consecutive years of dividend raises. Near fair value at 25.5x P/E. Classic forever hold."},
+    {t:"AXP",  n:"American Express",  pe:"24.0x",roe:"35%", margin:"19%",fcf:"$9.5B", moat:"Brand + Loyalty",  div:"1.3% · 12yr",brk:"YES · ~$40B", note:"Largest BRK financial holding. Affluent cardholders stay loyal in downturns. Closed-loop network gives economics Visa/MA lack."},
+    {t:"MSFT", n:"Microsoft",         pe:"24.9x",roe:"34%", margin:"39%",fcf:"$72.9B",moat:"Azure + Switching",div:"0.9% · 23yr",brk:"NO",          note:"24% below GF intrinsic value $552. P/E 20% below 10-yr avg. Best value in large-cap tech. Azure Cloud + AI deepening lock-in."},
+    {t:"AAPL", n:"Apple",             pe:"37.4x",roe:"122%",margin:"27%",fcf:"$129B", moat:"Ecosystem",        div:"0.3% · 12yr",brk:"YES · ~$74B", note:"WATCH: P/E 49% above 10-yr avg. Above intrinsic ~$263. World's largest FCF. Buy on pullback to $240-260."},
+    {t:"GOOGL",n:"Alphabet",          pe:"29.6x",roe:"39%", margin:"38%",fcf:"$64.4B",moat:"Data + Scale",     div:"0.2% · 2yr", brk:"YES · ~$4.3B",note:"BRK added $4.3B stake Q3 2025. Google Cloud +63% Q1 2026. Near debt-free D/E 0.20. High conviction."},
+    {t:"MCO",  n:"Moody's",           pe:"31.1x",roe:"68%", margin:"32%",fcf:"$2.5B", moat:"Oligopoly",        div:"0.9% · 26yr",brk:"YES · ~$12.6B",note:"BRK cost ~$248M now worth ~$12.6B — a 50x return. Government-mandated oligopoly with S&P. Impossible moat to replicate."},
+    {t:"DVA",  n:"DaVita",            pe:"19.5x",roe:"27%", margin:"11%",fcf:"$1.8B", moat:"Scale + Barriers", div:"None",       brk:"YES · ~38M sh",note:"BRK bought at ~$37, now ~$165. Shares down 40% via buybacks in 10 years. Aging population tailwind."},
+    {t:"V",    n:"Visa",              pe:"28.8x",roe:"60%", margin:"51%",fcf:"$21.6B",moat:"Network Effects",  div:"0.7% · 15yr",brk:"NO",          note:"51% net profit margins. 200+ country network. FCF growing +15% YoY. Asset-light model with enormous switching costs."},
+    {t:"COST", n:"Costco",            pe:"55.0x",roe:"32%", margin:"3%", fcf:"$6.0B", moat:"Membership+Scale", div:"1.0% · 20yr",brk:"NO",          note:"93% membership renewal rate. Premium P/E reflects exceptional loyalty. $6B+ annual membership fees = pure profit."},
+    {t:"MA",   n:"Mastercard",        pe:"29.0x",roe:"210%",margin:"46%",fcf:"$16.4B",moat:"Network Effects",  div:"0.7% · 13yr",brk:"NO",          note:"Best margin of safety — 23% below GF intrinsic value $643. Revenue +16%, EPS +19% FY2025."},
+    {t:"CVX",  n:"Chevron",           pe:"14.5x",roe:"15%", margin:"12%",fcf:"$12.0B",moat:"Cost+Integration", div:"4.6% · 36yr",brk:"YES · ~$14B", note:"BRK holds ~120M shares. Dividend Aristocrat 36 years. Lowest P/E of the 12. Best yield at 4.6%."},
+    {t:"JNJ",  n:"Johnson & Johnson", pe:"26.1x",roe:"26%", margin:"22%",fcf:"$19.7B",moat:"Brand+IP+Reg",     div:"2.4% · 62yr",brk:"NO",          note:"62 consecutive years of dividend raises. Oncology pivot with Darzalex & Carvykti. $19.7B annual free cash flow."},
+  ],
+  mag7: [
+    {t:"AAPL", n:"Apple",             pe:"37.4x",roe:"122%",margin:"27%",fcf:"$129B", moat:"Ecosystem",        div:"0.3%",brk:"YES · ~$74B", note:"World's largest FCF at $129B. WATCH: overvalued vs Buffett intrinsic ~$263. Buy on pullback below $260."},
+    {t:"MSFT", n:"Microsoft",         pe:"24.9x",roe:"34%", margin:"39%",fcf:"$72.9B",moat:"Azure+Switching",  div:"0.9%",brk:"NO",          note:"Best value in Mag 7. 24% below GF intrinsic value. Revenue +18%, EPS +30% YoY."},
+    {t:"GOOGL",n:"Alphabet",          pe:"29.6x",roe:"39%", margin:"38%",fcf:"$64.4B",moat:"Data+Scale",       div:"0.2%",brk:"YES · ~$4.3B",note:"BRK added $4.3B Q3 2025. Cloud +63% Q1 2026. Second cheapest Mag 7."},
+    {t:"AMZN", n:"Amazon",            pe:"34.0x",roe:"24%", margin:"10%",fcf:"$50B",  moat:"Logistics+AWS",    div:"None",brk:"NO",          note:"AWS dominant in cloud. Advertising revenue growing 20%+. Logistics network near-impossible to replicate."},
+    {t:"NVDA", n:"NVIDIA",            pe:"28.0x",roe:"123%",margin:"55%",fcf:"$44B",  moat:"CUDA Ecosystem",   div:"0.03%",brk:"NO",         note:"AI infrastructure supercycle. 55% net margins. CUDA keeps developers captive. Watch cyclical risk."},
+    {t:"META", n:"Meta Platforms",    pe:"22.0x",roe:"38%", margin:"38%",fcf:"$52B",  moat:"Network Effects",  div:"0.3%",brk:"NO",          note:"Cheapest Mag 7 at 22x P/E. 3B+ daily users. Llama AI + Threads expanding moat."},
+    {t:"TSLA", n:"Tesla",             pe:"95.0x",roe:"13%", margin:"7%", fcf:"$3B",   moat:"Brand+Supercharger",div:"None",brk:"NO",         note:"Highest P/E in Mag 7 at 95x. Weakest FCF and margins. Optimus + FSD optionality priced in."},
+  ]
+};
 
-const STOCKS = [
-  { symbol: "SPY", name: "S&P 500 ETF" },
-  { symbol: "AAPL", name: "Apple" },
-  { symbol: "MSFT", name: "Microsoft" },
-  { symbol: "GOOGL", name: "Alphabet" },
-  { symbol: "AMZN", name: "Amazon" },
-  { symbol: "META", name: "Meta" },
-  { symbol: "NVDA", name: "Nvidia" },
-  { symbol: "TSLA", name: "Tesla" },
-  { symbol: "AMD", name: "AMD" },
-  { symbol: "ASML", name: "ASML" },
-  { symbol: "CRWD", name: "CrowdStrike" },
-  { symbol: "PLTR", name: "Palantir" },
-  { symbol: "TSM", name: "TSMC" },
-  { symbol: "ZS", name: "Zscaler" },
-];
-
-const REFRESH_INTERVAL = 60 * 60 * 1000;
-
-async function fetchQuote(symbol) {
-  const res = await fetch(
-    `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${API_KEY}`
-  );
-  if (!res.ok) throw new Error("API error");
-  const data = await res.json();
-  return {
-    price: data.c,
-    change: data.d,
-    pctChange: data.dp,
-    high: data.h,
-    low: data.l,
-    open: data.o,
-    prevClose: data.pc,
-  };
-}
-
-function fmt(n, decimals = 2) {
-  if (n == null || isNaN(n)) return "—";
-  return n.toLocaleString("en-US", {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  });
-}
-
-function useCountdown(targetMs) {
-  const [remaining, setRemaining] = useState(targetMs);
-  useEffect(() => {
-    setRemaining(targetMs);
-    const interval = setInterval(() => {
-      setRemaining((r) => Math.max(0, r - 1000));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [targetMs]);
-  const mins = Math.floor(remaining / 60000);
-  const secs = Math.floor((remaining % 60000) / 1000);
-  return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
-}
+const fmtP = (p) => {
+  if (!p) return "———";
+  return p >= 1000 ? "$" + p.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}) : "$" + p.toFixed(2);
+};
 
 export default function App() {
-  const [stocks, setStocks] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [lastUpdated, setLastUpdated] = useState(null);
-  const [nextRefresh, setNextRefresh] = useState(REFRESH_INTERVAL);
-  const [refreshing, setRefreshing] = useState(false);
-  const [expanded, setExpanded] = useState(null);
+  const [tab, setTab] = useState("b12");
+  const [prices, setPrices] = useState({});
+  const [sheet, setSheet] = useState(null);
+  const [countdown, setCountdown] = useState(60);
+  const [updTime, setUpdTime] = useState("—");
+  const [loading, setLoading] = useState(false);
 
-  const loadAll = useCallback(async (isManual = false) => {
-    if (isManual) setRefreshing(true);
-    else setLoading(true);
-    setError(null);
+  const fetchPrice = async (t) => {
     try {
-      const results = await Promise.all(
-        STOCKS.map(async (s) => {
-          const q = await fetchQuote(s.symbol);
-          return [s.symbol, q];
-        })
-      );
-      setStocks(Object.fromEntries(results));
-      setLastUpdated(new Date());
-      setNextRefresh(REFRESH_INTERVAL);
-    } catch (e) {
-      setError("Failed to fetch. Check connection.");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
+      const r = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${t}?interval=1d&range=1d`);
+      const meta = (await r.json()).chart.result[0].meta;
+      return { price: meta.regularMarketPrice, prev: meta.previousClose || meta.chartPreviousClose, high: meta.regularMarketDayHigh, low: meta.regularMarketDayLow, vol: meta.regularMarketVolume };
+    } catch {
+      try {
+        const r2 = await fetch(`https://query2.finance.yahoo.com/v8/finance/chart/${t}?interval=1d&range=1d`);
+        const meta2 = (await r2.json()).chart.result[0].meta;
+        return { price: meta2.regularMarketPrice, prev: meta2.previousClose || meta2.chartPreviousClose, high: meta2.regularMarketDayHigh, low: meta2.regularMarketDayLow, vol: meta2.regularMarketVolume };
+      } catch { return null; }
     }
+  };
+
+  const loadAll = useCallback(async () => {
+    setLoading(true);
+    const tickers = [...new Set([...LISTS.b12, ...LISTS.mag7].map(s => s.t))];
+    const results = await Promise.all(tickers.map(async t => ({ t, d: await fetchPrice(t) })));
+    const newPrices = {};
+    results.forEach(({ t, d }) => { if (d) newPrices[t] = d; });
+    setPrices(newPrices);
+    setUpdTime(new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true }));
+    setCountdown(60);
+    setLoading(false);
   }, []);
 
+  useEffect(() => { loadAll(); }, [loadAll]);
+
   useEffect(() => {
-    loadAll();
-    const interval = setInterval(() => loadAll(), REFRESH_INTERVAL);
-    return () => clearInterval(interval);
+    const t = setInterval(() => {
+      setCountdown(c => { if (c <= 1) { loadAll(); return 60; } return c - 1; });
+    }, 1000);
+    return () => clearInterval(t);
   }, [loadAll]);
 
-  const countdown = useCountdown(nextRefresh);
-  const upCount = Object.values(stocks).filter((s) => s?.pctChange >= 0).length;
+  const list = LISTS[tab];
+  const gainers = list.filter(s => prices[s.t] && (prices[s.t].price - prices[s.t].prev) > 0).length;
 
-  const sortedStocks = [...STOCKS].sort((a, b) => {
-    const pctA = stocks[a.symbol]?.pctChange ?? -Infinity;
-    const pctB = stocks[b.symbol]?.pctChange ?? -Infinity;
-    return pctB - pctA;
-  });
+  const s = sheet ? [...LISTS.b12, ...LISTS.mag7].find(x => x.t === sheet) : null;
+  const d = sheet ? prices[sheet] : null;
+  const sCh = d ? d.price - d.prev : 0;
+  const sPct = d && d.prev ? (sCh / d.prev) * 100 : 0;
 
   return (
-    <div style={s.root}>
-      {/* Header */}
-      <div style={s.header}>
-        <div style={s.headerLeft}>
-          <span style={s.logo}>MAG<span style={s.accent}>7</span></span>
-          <span style={s.subtitle}>TRACKER</span>
-        </div>
-        <div style={s.headerRight}>
-          <span style={s.sentiment}>
-            <span style={{ color: upCount >= 7 ? "#00e676" : upCount >= 4 ? "#ffca28" : "#ff5252" }}>
-              {upCount}/{STOCKS.length} ↑
-            </span>
+    <div style={{background:"#000",minHeight:"100vh",maxWidth:520,margin:"0 auto",fontFamily:"'Courier New',monospace",color:"#fff",display:"flex",flexDirection:"column",height:"100vh",overflow:"hidden"}}>
+
+      {/* TABS */}
+      <div style={{display:"flex",borderBottom:"1px solid #1a1a1a",flexShrink:0}}>
+        {["b12","mag7"].map(t => (
+          <div key={t} onClick={() => setTab(t)} style={{flex:1,padding:"13px 0 11px",textAlign:"center",fontSize:13,fontWeight:700,letterSpacing:2,cursor:"pointer",color:tab===t?"#00ff41":"#444",borderBottom:tab===t?"2px solid #00ff41":"2px solid transparent"}}>
+            {t === "b12" ? "BUFF · 12" : "MAG · 7"}
+          </div>
+        ))}
+      </div>
+
+      {/* HEADER */}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 16px 8px",flexShrink:0}}>
+        <div style={{display:"flex",alignItems:"baseline"}}>
+          <span style={{fontSize:22,fontWeight:700,letterSpacing:-1,color:"#fff"}}>
+            {tab === "b12" ? <>BUFF<span style={{color:"#00ff41"}}>12</span></> : <>MAG<span style={{color:"#00ff41"}}>7</span></>}
           </span>
-          <button
-            style={{ ...s.refreshBtn, opacity: refreshing ? 0.5 : 1 }}
-            onClick={() => loadAll(true)}
-            disabled={refreshing}
-          >
-            ↻
+          <span style={{fontSize:10,letterSpacing:4,color:"#444",marginLeft:10}}>TRACKER</span>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <div style={{background:"#111",border:"1px solid #222",borderRadius:99,padding:"5px 14px",fontSize:14,fontWeight:700,display:"flex",alignItems:"center",gap:6}}>
+            <span>{gainers}</span><span>/</span><span>{list.length}</span>
+            <span style={{fontSize:11,color:gainers >= Math.ceil(list.length/2) ? "#00ff41" : "#ff3b3b"}}>▲</span>
+          </div>
+          <button onClick={loadAll} style={{width:38,height:38,borderRadius:"50%",background:"#111",border:"1px solid #222",color:"#888",fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <span style={{display:"inline-block", animation: loading ? "spin 0.8s linear infinite" : "none"}}>↻</span>
           </button>
         </div>
       </div>
 
-      {/* Meta bar */}
-      <div style={s.metaBar}>
-        <span style={s.metaText}>
-          {lastUpdated
-            ? `Updated ${lastUpdated.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}`
-            : "Loading..."}
-        </span>
-        <span style={s.metaText}>Next: <span style={{ color: "#00e676" }}>{countdown}</span></span>
+      {/* META */}
+      <div style={{display:"flex",justifyContent:"space-between",padding:"2px 16px 10px",fontSize:11,color:"#444",flexShrink:0}}>
+        <span>Updated <span style={{color:"#00ff41"}}>{updTime}</span></span>
+        <span>Next: <span style={{color:"#00ff41"}}>{String(Math.floor(countdown/60)).padStart(2,"0")}:{String(countdown%60).padStart(2,"0")}</span></span>
       </div>
 
-      {error && <div style={s.error}>{error}</div>}
+      <div style={{height:1,background:"#141414",flexShrink:0}} />
 
-      {/* Stock list */}
-      <div style={s.list}>
-        {sortedStocks.map((stock) => {
-          const q = stocks[stock.symbol];
-          const up = q?.pctChange >= 0;
-          const color = up ? "#00e676" : "#ff5252";
-          const isOpen = expanded === stock.symbol;
-
+      {/* LIST */}
+      <div style={{flex:1,overflowY:"auto"}}>
+        {list.map(s => {
+          const d = prices[s.t];
+          const ch = d ? d.price - d.prev : 0;
+          const pct = d && d.prev ? (ch / d.prev) * 100 : 0;
+          const isUp = pct > 0, isDn = pct < 0;
+          const col = isUp ? "#00ff41" : isDn ? "#ff3b3b" : "#555";
           return (
-            <div key={stock.symbol}>
-              {/* Main row */}
-              <div
-                style={s.row}
-                onClick={() => setExpanded(isOpen ? null : stock.symbol)}
-              >
-                {/* Left: symbol + name */}
-                <div style={s.rowLeft}>
-                  <span style={s.symbol}>{stock.symbol}</span>
-                  <span style={s.name}>{stock.name}</span>
-                </div>
-
-                {/* Center: price */}
-                <div style={s.rowCenter}>
-                  <span style={s.price}>
-                    {q ? `$${fmt(q.price)}` : "—"}
-                  </span>
-                </div>
-
-                {/* Right: change + pct */}
-                <div style={s.rowRight}>
-                  <span style={{ ...s.pct, color }}>
-                    {q ? `${up ? "+" : ""}${fmt(q.pctChange)}%` : "—"}
-                  </span>
-                  <span style={{ ...s.change, color }}>
-                    {q ? `${up ? "+" : ""}${fmt(q.change)}` : "—"}
-                  </span>
-                </div>
-
-                <span style={s.chevron}>{isOpen ? "▲" : "▼"}</span>
+            <div key={s.t} onClick={() => setSheet(s.t)} style={{display:"flex",alignItems:"center",padding:"16px",borderBottom:"1px solid #0f0f0f",cursor:"pointer"}}>
+              <div style={{minWidth:120}}>
+                <div style={{fontSize:22,fontWeight:700,letterSpacing:-0.5,color:"#fff"}}>{s.t}</div>
+                <div style={{fontSize:11,color:"#444",marginTop:3}}>{s.n}</div>
               </div>
-
-              {/* Expanded detail */}
-              {isOpen && q && (
-                <div style={s.detail}>
-                  <div style={s.detailGrid}>
-                    <div style={s.detailItem}>
-                      <span style={s.detailLabel}>OPEN</span>
-                      <span style={s.detailVal}>${fmt(q.open)}</span>
-                    </div>
-                    <div style={s.detailItem}>
-                      <span style={s.detailLabel}>HIGH</span>
-                      <span style={{ ...s.detailVal, color: "#00e676" }}>${fmt(q.high)}</span>
-                    </div>
-                    <div style={s.detailItem}>
-                      <span style={s.detailLabel}>LOW</span>
-                      <span style={{ ...s.detailVal, color: "#ff5252" }}>${fmt(q.low)}</span>
-                    </div>
-                    <div style={s.detailItem}>
-                      <span style={s.detailLabel}>PREV</span>
-                      <span style={s.detailVal}>${fmt(q.prevClose)}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <div style={{flex:1,textAlign:"right",paddingRight:14}}>
+                <div style={{fontSize:20,fontWeight:700,color:"#fff",whiteSpace:"nowrap"}}>{d ? fmtP(d.price) : <span style={{color:"#1e1e1e"}}>$———</span>}</div>
+              </div>
+              <div style={{textAlign:"right",minWidth:88}}>
+                <div style={{fontSize:18,fontWeight:700,color:col}}>{d ? `${pct>=0?"+":""}${Math.abs(pct).toFixed(2)}%` : <span style={{color:"#1e1e1e"}}>——%</span>}</div>
+                <div style={{fontSize:12,color:col,marginTop:3}}>{d ? `${ch>=0?"+":""}${Math.abs(ch).toFixed(2)}` : <span style={{color:"#1e1e1e"}}>——</span>}</div>
+              </div>
             </div>
           );
         })}
       </div>
 
-      <div style={s.footer}>Data via Finnhub · Auto-refreshes hourly</div>
+      {/* DETAIL SHEET */}
+      {sheet && (
+        <div onClick={(e) => { if (e.target === e.currentTarget) setSheet(null); }} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:50,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+          <div style={{background:"#080808",borderRadius:"18px 18px 0 0",borderTop:"1px solid #1e1e1e",width:"100%",maxWidth:520,paddingBottom:40,maxHeight:"88vh",overflowY:"auto"}}>
+            <div style={{width:38,height:4,background:"#252525",borderRadius:99,margin:"13px auto 0"}} />
+            <div style={{padding:"20px 20px 14px",borderBottom:"1px solid #111"}}>
+              <div style={{fontSize:28,fontWeight:700,letterSpacing:-1}}>{s?.t}</div>
+              <div style={{fontSize:13,color:"#444",marginTop:3}}>{s?.n}</div>
+              <div style={{fontSize:34,fontWeight:700,marginTop:12,letterSpacing:-1}}>{d ? fmtP(d.price) : "—"}</div>
+              <div style={{fontSize:17,fontWeight:700,marginTop:5,color: sPct>=0?"#00ff41":"#ff3b3b"}}>
+                {d ? `${sPct>=0?"+":""}${sPct.toFixed(2)}%   ${sCh>=0?"+":""}${Math.abs(sCh).toFixed(2)}` : ""}
+              </div>
+            </div>
+            <div style={{padding:"16px 20px 0"}}>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
+                {[["P/E Ratio",s?.pe],["ROE",s?.roe],["Net Margin",s?.margin],["Free Cash Flow",s?.fcf],["Moat",s?.moat],["Dividend",s?.div],["Berkshire",s?.brk],["Day High",d?fmtP(d.high):"—"],["Day Low",d?fmtP(d.low):"—"],["Volume",d&&d.vol?(d.vol/1e6).toFixed(1)+"M":"—"]].map(([l,v])=>(
+                  <div key={l} style={{background:"#111",borderRadius:11,padding:"12px 14px"}}>
+                    <div style={{fontSize:10,color:"#444",textTransform:"uppercase",letterSpacing:"0.09em",marginBottom:4}}>{l}</div>
+                    <div style={{fontSize:14,fontWeight:700,color:"#fff"}}>{v}</div>
+                  </div>
+                ))}
+              </div>
+              {s?.note && (
+                <div style={{background:"#0a150a",border:"1px solid #162616",borderRadius:11,padding:14,marginBottom:16}}>
+                  <div style={{fontSize:10,color:"#00ff41",textTransform:"uppercase",letterSpacing:"0.09em",marginBottom:7}}>Buffett Note</div>
+                  <div style={{fontSize:13,color:"#777",lineHeight:1.65,fontFamily:"system-ui,sans-serif"}}>{s.note}</div>
+                </div>
+              )}
+              <button onClick={() => setSheet(null)} style={{width:"100%",padding:15,background:"#111",border:"1px solid #1e1e1e",borderRadius:11,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",letterSpacing:2,fontFamily:"'Courier New',monospace"}}>CLOSE</button>
+            </div>
+          </div>
+        </div>
+      )}
 
-      <style>{`
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #0d0d0d; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
-      `}</style>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}*{-webkit-tap-highlight-color:transparent}::-webkit-scrollbar{display:none}`}</style>
     </div>
   );
 }
-
-const s = {
-  root: {
-    minHeight: "100vh",
-    background: "#0d0d0d",
-    color: "#f0f0f0",
-    fontFamily: "'Space Mono', 'Courier New', monospace",
-    maxWidth: 480,
-    margin: "0 auto",
-  },
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "14px 16px 8px",
-    borderBottom: "1px solid #1e1e1e",
-    position: "sticky",
-    top: 0,
-    background: "#0d0d0d",
-    zIndex: 10,
-  },
-  headerLeft: {
-    display: "flex",
-    alignItems: "baseline",
-    gap: 6,
-  },
-  logo: {
-    fontSize: 22,
-    fontWeight: 700,
-    letterSpacing: "-1px",
-    color: "#fff",
-  },
-  accent: {
-    color: "#00e676",
-  },
-  subtitle: {
-    fontSize: 9,
-    letterSpacing: "3px",
-    color: "#555",
-  },
-  headerRight: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-  },
-  sentiment: {
-    fontSize: 13,
-    fontWeight: 700,
-    padding: "3px 10px",
-    background: "#1a1a1a",
-    borderRadius: 20,
-    border: "1px solid #2a2a2a",
-  },
-  refreshBtn: {
-    background: "#1a1a1a",
-    border: "1px solid #2a2a2a",
-    color: "#00e676",
-    width: 32,
-    height: 32,
-    borderRadius: "50%",
-    fontSize: 16,
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  metaBar: {
-    display: "flex",
-    justifyContent: "space-between",
-    padding: "6px 16px",
-    borderBottom: "1px solid #1a1a1a",
-  },
-  metaText: {
-    fontSize: 10,
-    color: "#444",
-    letterSpacing: "0.3px",
-  },
-  error: {
-    margin: "8px 16px",
-    padding: "8px 12px",
-    background: "rgba(255,82,82,0.1)",
-    border: "1px solid rgba(255,82,82,0.3)",
-    borderRadius: 6,
-    color: "#ff5252",
-    fontSize: 11,
-  },
-  list: {
-    padding: "0",
-  },
-  row: {
-    display: "flex",
-    alignItems: "center",
-    padding: "14px 16px",
-    borderBottom: "1px solid #1a1a1a",
-    cursor: "pointer",
-    gap: 8,
-    background: "#0d0d0d",
-    transition: "background 0.15s",
-  },
-  rowLeft: {
-    flex: "0 0 90px",
-    display: "flex",
-    flexDirection: "column",
-    gap: 2,
-  },
-  symbol: {
-    fontSize: 17,
-    fontWeight: 700,
-    color: "#fff",
-    letterSpacing: "0.3px",
-  },
-  name: {
-    fontSize: 11,
-    color: "#555",
-    letterSpacing: "0.2px",
-  },
-  rowCenter: {
-    flex: 1,
-    textAlign: "right",
-  },
-  price: {
-    fontSize: 17,
-    fontWeight: 700,
-    color: "#e0e0e0",
-    letterSpacing: "-0.3px",
-  },
-  rowRight: {
-    flex: "0 0 80px",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-end",
-    gap: 2,
-  },
-  pct: {
-    fontSize: 16,
-    fontWeight: 700,
-  },
-  change: {
-    fontSize: 12,
-  },
-  chevron: {
-    fontSize: 8,
-    color: "#333",
-    flex: "0 0 10px",
-  },
-  detail: {
-    background: "#111",
-    borderBottom: "1px solid #1a1a1a",
-    padding: "10px 16px 12px",
-    animation: "fadeIn 0.15s ease",
-  },
-  detailGrid: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr 1fr 1fr",
-    gap: 8,
-  },
-  detailItem: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 3,
-  },
-  detailLabel: {
-    fontSize: 10,
-    color: "#444",
-    letterSpacing: "0.5px",
-  },
-  detailVal: {
-    fontSize: 13,
-    color: "#aaa",
-    fontWeight: 700,
-  },
-  footer: {
-    textAlign: "center",
-    padding: "20px 16px",
-    fontSize: 9,
-    color: "#2a2a2a",
-    letterSpacing: "1px",
-  },
-};
